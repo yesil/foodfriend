@@ -24,7 +24,7 @@
         android:layout_height="fill_parent"
         android:layout_centerInParent="true" />
 
-    <com.google.zxing.client.android.ViewfinderView
+    <com.foodfriend.ViewfinderView
         android:id="@+id/viewfinder_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
@@ -62,98 +62,6 @@
                     android:maxHeight="160dip"
                     android:maxWidth="160dip"
                     android:scaleType="centerInside" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <TextView
-                        android:id="@+id/format_text_view_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingRight="4dip"
-                        android:text="@string/msg_default_format"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/format_text_view"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <TextView
-                        android:id="@+id/type_text_view_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingRight="4dip"
-                        android:text="@string/msg_default_type"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/type_text_view"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <TextView
-                        android:id="@+id/time_text_view_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingRight="4dip"
-                        android:text="@string/msg_default_time"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/time_text_view"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <TextView
-                        android:id="@+id/meta_text_view_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingRight="4dip"
-                        android:text="@string/msg_default_meta"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/meta_text_view"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/result_minor_text"
-                        android:textSize="14sp" />
-                </LinearLayout>
             </LinearLayout>
 
             <ScrollView
@@ -197,21 +105,27 @@
             android:visibility="gone" >
 
             <Button
+                android:id="@+id/btnVegetarian"
                 android:layout_width="0dip"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:text="@string/button_product_vegetarian"
                 android:textSize="14sp" />
 
             <Button
+                android:id="@+id/btnHalal"
                 android:layout_width="0dip"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:text="@string/button_product_halal"
                 android:textSize="14sp" />
 
             <Button
+                android:id="@+id/btnKosher"
                 android:layout_width="0dip"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:text="@string/button_product_kosher"
                 android:textSize="14sp" />
         </LinearLayout>
 
@@ -220,45 +134,52 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:visibility="gone" >
 
-            <CheckBox
-                android:id="@+id/chkVegetarian"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:text="Vegetarian" />
+                android:gravity="center"
+                android:orientation="horizontal" >
 
-            <CheckBox
-                android:id="@+id/chkHalal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Halal" />
+                <CheckBox
+                    android:id="@+id/chkVegetarian"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Vegetarian" />
 
-            <CheckBox
-                android:id="@+id/chkKosher"
-                android:layout_width="wrap_content"
+                <CheckBox
+                    android:id="@+id/chkHalal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Halal" />
+
+                <CheckBox
+                    android:id="@+id/chkKosher"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kosher" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btn_new_entry"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Kosher" />
+                android:text="Save"
+                android:textSize="14sp"
+                android:visibility="visible" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/btn_new_entry"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/status_view"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Save"
-            android:textSize="14sp"
-            android:visibility="visible" />
+            android:layout_gravity="bottom|center_horizontal"
+            android:background="@color/transparent"
+            android:text="@string/msg_default_status"
+            android:textColor="@color/status_text"
+            android:textSize="14sp" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/status_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:background="@color/transparent"
-        android:text="@string/msg_default_status"
-        android:textColor="@color/status_text"
-        android:textSize="14sp" />
 
 </FrameLayout>

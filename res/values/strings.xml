@@ -15,20 +15,18 @@
  limitations under the License.
  -->
 <resources>
-  <string name="app_name">Barcode Scanner</string>
+  <string name="app_name">Food Friend</string>
   <string name="app_picker_name">Applications</string>
   <string name="button_product_kosher">Kosher</string>
   <string name="button_product_vegetarian">Vegetarian</string>
   <string name="button_product_halal">Halal</string>
   <string name="button_ok">OK</string>
+  <string name="button_cancel">Cancel</string>
+  <string name="enter_barcode">Enter barcode</string>
   <string name="menu_settings">Settings</string>
   <string name="msg_bulk_mode_scanned">Bulk mode: barcode scanned and saved</string>
   <string name="msg_camera_framework_bug">Sorry, the Android camera encountered a problem. You may need to restart the device.</string>
-  <string name="msg_default_format">Format</string>
-  <string name="msg_default_meta">Metadata</string>
   <string name="msg_default_status">Place a barcode inside the viewfinder rectangle to scan it.</string>
-  <string name="msg_default_time">Time</string>
-  <string name="msg_default_type">Type</string>
   <string name="permission_share">Share by barcode</string>
   <string name="permission_share_desc">Allows you to share and add contacts and bookmarks by displaying or scanning a barcode, and to export scanned information.</string>
   <string name="permission_wifi">Configure wi-fi by barcode</string>
@@ -37,7 +35,6 @@
   <string name="preferences_bulk_mode_summary">Scan and save many barcodes continuously</string>
   <string name="preferences_bulk_mode_title">Bulk scan mode</string>
   <string name="preferences_copy_to_clipboard_title">Copy to clipboard</string>
-  <string name="preferences_custom_product_search_summary" formatted="false">Use %s as a placeholder for the product ID, and %f for format</string>
   <string name="preferences_custom_product_search_title">Kosher URL</string>
   <string name="preferences_decode_1D_title">1D barcodes</string>
   <string name="preferences_decode_Data_Matrix_title">Data Matrix</string>
