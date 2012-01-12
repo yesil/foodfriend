@@ -17,10 +17,15 @@
 package com.foodfriend;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Collection;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -30,7 +35,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -69,6 +73,7 @@ import com.google.zxing.ResultPoint;
  * shows feedback as the image processing is happening, and then overlays the
  * results when a scan is successful.
  * 
+ * @author Ilyas Türkben yesilturk@gmail.com
  * @author dswitkin@google.com (Daniel Switkin)
  * @author Sean Owen
  */
@@ -82,23 +87,12 @@ public final class CaptureActivity extends Activity implements
 
 	private static final long BULK_MODE_SCAN_DELAY_MS = 1000L;
 
-	private static final String PRODUCT_SEARCH_URL_PREFIX = "http://www.google";
-	private static final String PRODUCT_SEARCH_URL_SUFFIX = "/m/products/scan";
-	private static final String ZXING_URL = "http://zxing.appspot.com/scan";
-
-	private enum Source {
-		NATIVE_APP_INTENT, PRODUCT_SEARCH_LINK, ZXING_LINK, NONE
-	}
-
 	private CameraManager cameraManager;
 	private CaptureActivityHandler handler;
 	private ViewfinderView viewfinderView;
 	private TextView statusView;
 	private View resultView;
-	private Result lastResult;
 	private boolean hasSurface;
-	private Source source;
-	private String sourceUrl;
 	private Collection<BarcodeFormat> decodeFormats;
 	private String characterSet;
 	private InactivityTimer inactivityTimer;
@@ -125,7 +119,7 @@ public final class CaptureActivity extends Activity implements
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-		// new ContextWrapper(this).deleteDatabase("FOODFRIEND");
+		//new ContextWrapper(this).deleteDatabase("FOODFRIEND");
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.capture);
@@ -136,7 +130,6 @@ public final class CaptureActivity extends Activity implements
 
 		statusView = (TextView) findViewById(R.id.status_view);
 		handler = null;
-		lastResult = null;
 		hasSurface = false;
 		inactivityTimer = new InactivityTimer(this);
 		beepManager = new BeepManager(this);
@@ -179,12 +172,10 @@ public final class CaptureActivity extends Activity implements
 
 		Intent intent = getIntent();
 		String action = intent == null ? null : intent.getAction();
-		String dataString = intent == null ? null : intent.getDataString();
 		if (intent != null && action != null) {
 			if (action.equals(Intents.Scan.ACTION)) {
 				// Scan the formats the intent requested, and return the result
 				// to the calling activity.
-				source = Source.NATIVE_APP_INTENT;
 				decodeFormats = DecodeFormatManager.parseDecodeFormats(intent);
 				if (intent.hasExtra(Intents.Scan.WIDTH)
 						&& intent.hasExtra(Intents.Scan.HEIGHT)) {
@@ -194,33 +185,13 @@ public final class CaptureActivity extends Activity implements
 						cameraManager.setManualFramingRect(width, height);
 					}
 				}
-			} else if (dataString != null
-					&& dataString.contains(PRODUCT_SEARCH_URL_PREFIX)
-					&& dataString.contains(PRODUCT_SEARCH_URL_SUFFIX)) {
-				// Scan only products and send the result to mobile Product
-				// Search.
-				source = Source.PRODUCT_SEARCH_LINK;
-				sourceUrl = dataString;
-				decodeFormats = DecodeFormatManager.PRODUCT_FORMATS;
-			} else if (dataString != null && dataString.startsWith(ZXING_URL)) {
-				// Scan formats requested in query string (all formats if none
-				// specified).
-				// If a return URL is specified, send the results there.
-				// Otherwise, handle it ourselves.
-				source = Source.ZXING_LINK;
-				sourceUrl = dataString;
-				Uri inputUri = Uri.parse(sourceUrl);
-				decodeFormats = DecodeFormatManager
-						.parseDecodeFormats(inputUri);
 			} else {
 				// Scan all formats and handle the results ourselves (launched
 				// from Home).
-				source = Source.NONE;
 				decodeFormats = null;
 			}
 			characterSet = intent.getStringExtra(Intents.Scan.CHARACTER_SET);
 		} else {
-			source = Source.NONE;
 			decodeFormats = null;
 			characterSet = null;
 		}
@@ -254,18 +225,8 @@ public final class CaptureActivity extends Activity implements
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
-			if (source == Source.NATIVE_APP_INTENT) {
-				setResult(RESULT_CANCELED);
-				finish();
-				return true;
-			} else if ((source == Source.NONE || source == Source.ZXING_LINK)
-					&& lastResult != null) {
-				resetStatusView();
-				if (handler != null) {
-					handler.sendEmptyMessage(R.id.restart_preview);
-				}
-				return true;
-			}
+			resetStatusView();
+			return true;
 		} else if (keyCode == KeyEvent.KEYCODE_FOCUS
 				|| keyCode == KeyEvent.KEYCODE_CAMERA) {
 			// Handle these events so they don't launch the Camera app
@@ -329,7 +290,6 @@ public final class CaptureActivity extends Activity implements
 	 */
 	public void handleDecode(Result rawResult, Bitmap barcode) {
 		inactivityTimer.onActivity();
-		lastResult = rawResult;
 		product = dbOpenHelper.findByBarcode(rawResult.getText());
 
 		if (barcode == null) {
@@ -338,24 +298,20 @@ public final class CaptureActivity extends Activity implements
 		} else {
 			beepManager.playBeepSoundAndVibrate();
 			drawResultPoints(barcode, rawResult);
-			switch (source) {
-			case NONE:
-				SharedPreferences prefs = PreferenceManager
-						.getDefaultSharedPreferences(this);
-				if (prefs.getBoolean(PreferencesActivity.KEY_BULK_MODE, false)) {
-					Toast.makeText(this, R.string.msg_bulk_mode_scanned,
-							Toast.LENGTH_SHORT).show();
-					// Wait a moment or else it will scan the same barcode
-					// continuously about 3 times
-					if (handler != null) {
-						handler.sendEmptyMessageDelayed(R.id.restart_preview,
-								BULK_MODE_SCAN_DELAY_MS);
-					}
-					resetStatusView();
-				} else {
-					handleDecodeInternally(rawResult.getText(), barcode);
+			SharedPreferences prefs = PreferenceManager
+					.getDefaultSharedPreferences(this);
+			if (prefs.getBoolean(PreferencesActivity.KEY_BULK_MODE, false)) {
+				Toast.makeText(this, R.string.msg_bulk_mode_scanned,
+						Toast.LENGTH_SHORT).show();
+				// Wait a moment or else it will scan the same barcode
+				// continuously about 3 times
+				if (handler != null) {
+					handler.sendEmptyMessageDelayed(R.id.restart_preview,
+							BULK_MODE_SCAN_DELAY_MS);
 				}
-				break;
+				resetStatusView();
+			} else {
+				handleDecodeInternally(rawResult.getText(), barcode);
 			}
 		}
 	}
@@ -413,18 +369,22 @@ public final class CaptureActivity extends Activity implements
 		resultView.setVisibility(View.VISIBLE);
 
 		ImageView barcodeImageView = (ImageView) findViewById(R.id.barcode_image_view);
-		if (barcodeImage == null) {
-			barcodeImageView.setImageBitmap(BitmapFactory.decodeResource(
-					getResources(), R.drawable.launcher_icon));
-		} else {
+		if (barcodeImage != null) {
 			barcodeImageView.setImageBitmap(barcodeImage);
 		}
+		if (product.isPersisted()) {
+			new LoadImageTask(barcodeImageView).execute(barcode);
+		}
 
-		TextView contentsTextView = (TextView) findViewById(R.id.contents_text_view);
-		contentsTextView.setText(barcode);
-		TextView supplementTextView = (TextView) findViewById(R.id.contents_supplement_text_view);
-		supplementTextView.setText("");
-		supplementTextView.setOnClickListener(null);
+		TextView txtName = (TextView) findViewById(R.id.text_name);
+		txtName.setText(product.getName());
+
+		TextView txtDescription = (TextView) findViewById(R.id.text_description);
+		txtDescription.setText(product.getIngredients());
+
+		TextView txtBarcode = (TextView) findViewById(R.id.text_barcode);
+		txtBarcode.setText(barcode);
+
 		if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
 				PreferencesActivity.KEY_SUPPLEMENTAL, true)) {
 		}
@@ -440,11 +400,10 @@ public final class CaptureActivity extends Activity implements
 			btnVegetarian.setTextColor(product.isVegetarian() ? Color.GREEN
 					: Color.RED);
 			Button btnHalal = (Button) findViewById(R.id.btnHalal);
-			btnHalal.setTextColor(product.isVegetarian() ? Color.GREEN
-					: Color.RED);
+			btnHalal.setTextColor(product.isHalal() ? Color.GREEN : Color.RED);
 			Button btnKosher = (Button) findViewById(R.id.btnKosher);
-			btnKosher.setTextColor(product.isVegetarian() ? Color.GREEN
-					: Color.RED);
+			btnKosher
+					.setTextColor(product.isKosher() ? Color.GREEN : Color.RED);
 
 		} else {
 			checkView.setVisibility(View.VISIBLE);
@@ -460,6 +419,9 @@ public final class CaptureActivity extends Activity implements
 			chkKosher.setChecked(false);
 			Button newEntryButton = (Button) findViewById(R.id.btn_new_entry);
 			newEntryButton.setOnClickListener(this);
+
+			Button searchOnlineButton = (Button) findViewById(R.id.btn_search_online);
+			searchOnlineButton.setOnClickListener(this);
 
 		}
 	}
@@ -498,7 +460,9 @@ public final class CaptureActivity extends Activity implements
 		statusView.setText(R.string.msg_default_status);
 		statusView.setVisibility(View.VISIBLE);
 		viewfinderView.setVisibility(View.VISIBLE);
-		lastResult = null;
+		if (handler != null) {
+			handler.restartPreviewAndDecode();
+		}
 	}
 
 	public void drawViewfinder() {
@@ -525,8 +489,16 @@ public final class CaptureActivity extends Activity implements
 
 	@Override
 	public void onClick(View v) {
-		dbOpenHelper.createNewEntry(product);
-		resetStatusView();
+		switch (v.getId()) {
+		case R.id.btn_search_online:
+			new SearchOnlineTask(this, dbOpenHelper)
+					.execute(new String[] { product.getBarcode() });
+			break;
+		default:
+			dbOpenHelper.createNewEntry(product);
+			resetStatusView();
+
+		}
 	}
 
 	public void showKeyboard() {
@@ -562,5 +534,15 @@ public final class CaptureActivity extends Activity implements
 	public boolean onTouch(View v, MotionEvent event) {
 		gestureDetector.onTouchEvent(event);
 		return false;
+	}
+
+	public void productFound(Product result) {
+		this.product = result;
+		handleDecodeInternally(product.getBarcode(), null);
+	}
+
+	public void productNotFound() {
+		Button searchOnlineButton = (Button) findViewById(R.id.btn_search_online);
+		searchOnlineButton.setVisibility(View.INVISIBLE);
 	}
 }
