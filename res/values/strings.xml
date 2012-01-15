@@ -16,14 +16,11 @@
 -->
 <resources>
 
-    <string name="app_name">Food Friend</string>
+    <string name="app_name">FoodTag</string>
     <string name="app_picker_name">Applications</string>
-    <string name="button_product_kosher">Kosher</string>
-    <string name="button_product_vegetarian">Vegetarian</string>
-    <string name="button_product_halal">Halal</string>
     <string name="button_ok">OK</string>
     <string name="button_save">Save</string>
-    <string name="button_search_online">Online</string>
+    <string name="button_search_online">Search on the internet</string>
     <string name="button_cancel">Cancel</string>
     <string name="enter_barcode">Enter barcode</string>
     <string name="image_barcode">Barcode image</string>
@@ -41,8 +38,6 @@
     <string name="preferences_copy_to_clipboard_title">Copy to clipboard</string>
     <string name="preferences_custom_product_search_title">Kosher URL</string>
     <string name="preferences_decode_1D_title">1D barcodes</string>
-    <string name="preferences_decode_Data_Matrix_title">Data Matrix</string>
-    <string name="preferences_decode_QR_title">QR Codes</string>
     <string name="preferences_front_light_summary">Improves scanning in low light on some phones, but may cause glare. Does not work on all phones.</string>
     <string name="preferences_front_light_title">Use front light</string>
     <string name="preferences_general_title">General settings</string>
@@ -60,5 +55,10 @@
     <string name="preferences_vibrate_title">Vibrate</string>
     <string name="result_product">Found product</string>
     <string name="title_about">Barcode Scanner v</string>
+    <string name="tags">Tags</string>
+    <string name="ingredients">Ingredients</string>
+    <string name="product_name">Name</string>
+    <string name="available_tags">Available tags</string>
+    <string name="added_tags">Added tags</string>
 
 </resources>

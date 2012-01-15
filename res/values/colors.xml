@@ -28,4 +28,5 @@
   <color name="status_text">#ffffffff</color>
   <color name="isOK">#40AD56</color>
   <color name="isKO">#F20A0A</color>
+  <color name="tag_title">#0095da</color>
 </resources>

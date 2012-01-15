@@ -1,0 +1,6 @@
+<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
+    android:contentAuthority="authority"
+    android:accountType="accountType"
+    android:userVisible="true"
+    android:supportsUploading="true"
+ />
