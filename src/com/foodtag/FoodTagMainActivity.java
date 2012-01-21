@@ -16,6 +16,7 @@
 
 package com.foodtag;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,9 +33,11 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -59,6 +62,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.foodtag.camera.CameraManager;
+import com.foodtag.task.LoadImageTask;
+import com.foodtag.task.SaveTask;
+import com.foodtag.task.SearchOnlineTask;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
 import com.google.zxing.ResultPoint;
@@ -82,6 +88,8 @@ public final class FoodTagMainActivity extends Activity implements
 	private static final int SETTINGS_ID = Menu.FIRST + 2;
 
 	private static final long BULK_MODE_SCAN_DELAY_MS = 1000L;
+
+	private static final int CAMERA_PIC_REQUEST = 1986;
 
 	private CameraManager cameraManager;
 	private FoodTagActivityHandler handler;
@@ -107,6 +115,10 @@ public final class FoodTagMainActivity extends Activity implements
 
 	private FlowLayout tagContainerAdded;
 
+	private String wsURL;
+
+	private File tempFile;
+
 	public ViewfinderView getViewfinderView() {
 		return viewfinderView;
 	}
@@ -122,8 +134,7 @@ public final class FoodTagMainActivity extends Activity implements
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-		new ContextWrapper(this)
-				.deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
+		//new ContextWrapper(this).deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.capture);
@@ -148,6 +159,7 @@ public final class FoodTagMainActivity extends Activity implements
 
 		foundView.setVisibility(View.GONE);
 		notFoundView.setVisibility(View.GONE);
+		wsURL = getString(R.string.ws_url);
 
 	}
 
@@ -391,7 +403,7 @@ public final class FoodTagMainActivity extends Activity implements
 		if (product.isPersisted()) {
 			barcodeImageView.setVisibility(View.VISIBLE);
 			searchButton.setVisibility(View.GONE);
-			new LoadImageTask(barcodeImageView).execute(barcode);
+			new LoadImageTask(wsURL, barcodeImageView).execute(barcode);
 		}
 
 		TextView txtName = (TextView) findViewById(R.id.text_name);
@@ -417,6 +429,8 @@ public final class FoodTagMainActivity extends Activity implements
 				tagContainer.addView(b);
 			}
 		} else {
+			new SearchOnlineTask(wsURL, this, dbOpenHelper)
+					.execute(new String[] { product.getBarcode() });
 			tagContainerAdded.removeAllViews();
 			tagContainerNotAdded.removeAllViews();
 			HashMap<String, Tag> tags = dbOpenHelper.getTags();
@@ -503,12 +517,13 @@ public final class FoodTagMainActivity extends Activity implements
 		} else {
 			switch (v.getId()) {
 			case R.id.btn_search_online:
-				new SearchOnlineTask(this, dbOpenHelper)
+				new SearchOnlineTask(wsURL, this, dbOpenHelper)
 						.execute(new String[] { product.getBarcode() });
 				break;
 			default:
-				dbOpenHelper.createNewEntry(product);
-				resetStatusView();
+				// dbOpenHelper.createNewEntry(product);
+				// resetStatusView();
+				takePhoto();
 			}
 		}
 	}
@@ -556,5 +571,25 @@ public final class FoodTagMainActivity extends Activity implements
 	public void productNotFound() {
 		Button searchOnlineButton = (Button) findViewById(R.id.btn_search_online);
 		searchOnlineButton.setVisibility(View.GONE);
+	}
+
+	private void takePhoto() {
+		Intent cameraIntent = new Intent(
+				android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+		try {
+			tempFile = File.createTempFile("foodtag", "jpg").getAbsoluteFile();
+			cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+					Uri.fromFile(tempFile));
+		} catch (IOException e) {
+			resetStatusView();
+		}
+		startActivityForResult(cameraIntent, CAMERA_PIC_REQUEST);
+	}
+
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == CAMERA_PIC_REQUEST) {
+			new SaveTask(wsURL, tempFile, product).execute(null);
+		}
+		resetStatusView();
 	}
 }

@@ -60,5 +60,6 @@
     <string name="product_name">Name</string>
     <string name="available_tags">Available tags</string>
     <string name="added_tags">Added tags</string>
+    <string name="ws_url">"http://foodtag.herokuapp.com</string>
 
 </resources>
