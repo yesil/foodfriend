@@ -72,6 +72,8 @@ public class FoodTagDbOpenHelper extends SQLiteOpenHelper {
 	}
 
 	public void createNewEntry(Product product) {
+		getWritableDatabase().delete(TABLE_NAME, "BARCODE = ?",
+				new String[] { product.getBarcode() });
 		ContentValues values = new ContentValues();
 		values.put("BARCODE", product.getBarcode());
 		values.put("NAME", product.getName());

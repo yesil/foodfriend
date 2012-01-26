@@ -52,14 +52,6 @@
                 android:adjustViewBounds="true"
                 android:contentDescription="@string/image_barcode"
                 android:scaleType="centerInside" />
-
-            <Button
-                android:id="@+id/btn_search_online"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:drawableTop="@drawable/search_online"
-                android:focusable="false"
-                android:text="@string/button_search_online" />
         </LinearLayout>
 
         <RelativeLayout

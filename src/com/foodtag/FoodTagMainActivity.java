@@ -319,7 +319,7 @@ public final class FoodTagMainActivity extends Activity implements
 
 		if (barcode == null) {
 			// This is from history -- no saved barcode
-			handleDecodeInternally(rawResult.getText(), null);
+			handleDecodeInternally(rawResult.getText(), null, true);
 		} else {
 			beepManager.playBeepSoundAndVibrate();
 			drawResultPoints(barcode, rawResult);
@@ -336,7 +336,7 @@ public final class FoodTagMainActivity extends Activity implements
 				}
 				resetStatusView();
 			} else {
-				handleDecodeInternally(rawResult.getText(), barcode);
+				handleDecodeInternally(rawResult.getText(), barcode, true);
 			}
 		}
 	}
@@ -388,21 +388,24 @@ public final class FoodTagMainActivity extends Activity implements
 	}
 
 	// Put up our own UI for how to handle the decoded contents.
-	private void handleDecodeInternally(String barcode, Bitmap barcodeImage) {
+	private void handleDecodeInternally(String barcode, Bitmap barcodeImage,
+			boolean searchOnline) {
+		if (searchOnline) {
+			new SearchOnlineTask(wsURL, this, dbOpenHelper)
+					.execute(new String[] { product.getBarcode() });
+		}
+
 		viewfinderView.setVisibility(View.GONE);
 		resultView.setVisibility(View.VISIBLE);
 		ImageView barcodeImageView = (ImageView) findViewById(R.id.barcode_image_view);
-		Button searchButton = (Button) findViewById(R.id.btn_search_online);
 		if (barcodeImage != null) {
 			barcodeImageView.setImageBitmap(barcodeImage);
 		} else if (!product.isPersisted()) {
-			searchButton.setVisibility(View.VISIBLE);
 			barcodeImageView.setVisibility(View.INVISIBLE);
 			barcodeImageView.setImageBitmap(null);
 		}
 		if (product.isPersisted()) {
 			barcodeImageView.setVisibility(View.VISIBLE);
-			searchButton.setVisibility(View.GONE);
 			new LoadImageTask(wsURL, barcodeImageView).execute(barcode);
 		}
 
@@ -425,12 +428,12 @@ public final class FoodTagMainActivity extends Activity implements
 			tagContainer.removeAllViews();
 			HashMap<String, Tag> tags = dbOpenHelper.getTags();
 			for (String tagAsString : product.getTags()) {
-				TagButton b = new TagButton(tags.get(tagAsString), this);
-				tagContainer.addView(b);
+				if (tagAsString != null && !"".equals(tagAsString)) {
+					TagButton b = new TagButton(tags.get(tagAsString), this);
+					tagContainer.addView(b);
+				}
 			}
 		} else {
-			new SearchOnlineTask(wsURL, this, dbOpenHelper)
-					.execute(new String[] { product.getBarcode() });
 			tagContainerAdded.removeAllViews();
 			tagContainerNotAdded.removeAllViews();
 			HashMap<String, Tag> tags = dbOpenHelper.getTags();
@@ -442,16 +445,12 @@ public final class FoodTagMainActivity extends Activity implements
 
 			Button newEntryButton = (Button) findViewById(R.id.btn_save_entry);
 			newEntryButton.setOnClickListener(this);
-
-			Button searchOnlineButton = (Button) findViewById(R.id.btn_search_online);
-			searchOnlineButton.setVisibility(View.VISIBLE);
-			searchOnlineButton.setOnClickListener(this);
-
 		}
 	}
 
 	private void initCamera(SurfaceHolder surfaceHolder) {
 		try {
+			Thread.sleep(1000L);
 			cameraManager.openDriver(surfaceHolder);
 			// Creating the handler starts the preview, which can also throw a
 			// RuntimeException.
@@ -465,6 +464,9 @@ public final class FoodTagMainActivity extends Activity implements
 		} catch (RuntimeException e) {
 			// Barcode Scanner has seen crashes in the wild of this variety:
 			// java.?lang.?RuntimeException: Fail to connect to camera service
+			Log.w(TAG, "Unexpected error initializing camera", e);
+			displayFrameworkBugMessageAndExit();
+		} catch (InterruptedException e) {
 			Log.w(TAG, "Unexpected error initializing camera", e);
 			displayFrameworkBugMessageAndExit();
 		}
@@ -516,10 +518,6 @@ public final class FoodTagMainActivity extends Activity implements
 
 		} else {
 			switch (v.getId()) {
-			case R.id.btn_search_online:
-				new SearchOnlineTask(wsURL, this, dbOpenHelper)
-						.execute(new String[] { product.getBarcode() });
-				break;
 			default:
 				// dbOpenHelper.createNewEntry(product);
 				// resetStatusView();
@@ -542,7 +540,7 @@ public final class FoodTagMainActivity extends Activity implements
 											.toString();
 									product = dbOpenHelper
 											.findByBarcode(barcode);
-									handleDecodeInternally(barcode, null);
+									handleDecodeInternally(barcode, null, true);
 								}
 							})
 					.setNegativeButton(R.string.button_cancel,
@@ -565,12 +563,7 @@ public final class FoodTagMainActivity extends Activity implements
 
 	public void productFound(Product result) {
 		this.product = result;
-		handleDecodeInternally(product.getBarcode(), null);
-	}
-
-	public void productNotFound() {
-		Button searchOnlineButton = (Button) findViewById(R.id.btn_search_online);
-		searchOnlineButton.setVisibility(View.GONE);
+		handleDecodeInternally(product.getBarcode(), null, false);
 	}
 
 	private void takePhoto() {

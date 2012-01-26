@@ -93,8 +93,6 @@ public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 	protected void onPostExecute(Product result) {
 		if (result != null) {
 			captureActivity.productFound(result);
-		} else {
-			captureActivity.productNotFound();
 		}
 	}
 
