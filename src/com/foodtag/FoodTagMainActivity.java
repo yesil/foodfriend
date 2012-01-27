@@ -134,7 +134,8 @@ public final class FoodTagMainActivity extends Activity implements
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-		//new ContextWrapper(this).deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
+		// new
+		// ContextWrapper(this).deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.capture);
@@ -406,7 +407,9 @@ public final class FoodTagMainActivity extends Activity implements
 		}
 		if (product.isPersisted()) {
 			barcodeImageView.setVisibility(View.VISIBLE);
-			new LoadImageTask(wsURL, barcodeImageView).execute(barcode);
+			if (!searchOnline) {
+				new LoadImageTask(wsURL, barcodeImageView).execute(barcode);
+			}
 		}
 
 		TextView txtName = (TextView) findViewById(R.id.text_name);

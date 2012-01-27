@@ -1,18 +1,19 @@
 package com.foodtag.task;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.ImageView;
-
-import com.foodtag.R;
 
 public class LoadImageTask extends AsyncTask<String, Integer, Bitmap> {
 
@@ -39,36 +40,19 @@ public class LoadImageTask extends AsyncTask<String, Integer, Bitmap> {
 
 	private Bitmap LoadImage(String URL, BitmapFactory.Options options) {
 		Bitmap bitmap = null;
-		InputStream in = null;
 		try {
-			in = OpenHttpConnection(URL);
-			if (in != null) {
-				bitmap = BitmapFactory.decodeStream(in, null, options);
-				in.close();
-			}
-		} catch (IOException e1) {
-			Log.e("HTTP", "product image loading is failed", e1);
-		}
-		return bitmap;
-	}
-
-	private InputStream OpenHttpConnection(String strURL) throws IOException {
-		InputStream inputStream = null;
-		URL url = new URL(strURL);
-		URLConnection conn = url.openConnection();
-
-		try {
-			HttpURLConnection httpConn = (HttpURLConnection) conn;
-			httpConn.setRequestMethod("GET");
-			httpConn.connect();
-
-			if (httpConn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-				inputStream = httpConn.getInputStream();
-			}
+			HttpClient httpclient = new DefaultHttpClient();
+			HttpGet httpget = new HttpGet(URL);
+			HttpResponse response = httpclient.execute(httpget);
+			HttpEntity entity = response.getEntity();
+			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			entity.writeTo(bout);
+			bitmap = BitmapFactory.decodeByteArray(bout.toByteArray(), 0,
+					bout.size(), options);
 		} catch (Exception ex) {
 			Log.e("HTTP", "product image loading is failed", ex);
 		}
-		return inputStream;
+		return bitmap;
 	}
 
 	@Override

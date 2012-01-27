@@ -34,7 +34,7 @@
 		<link>
 			<name>srccore</name>
 			<type>2</type>
-			<location>/home/ilyas/code.google.com/zxing-read-only/core/src</location>
+			<location>/home/ilyas/code.google.com/zxing-core-read-only/src</location>
 		</link>
 	</linkedResources>
 </projectDescription>
