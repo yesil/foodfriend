@@ -27,7 +27,7 @@ public class SaveTask extends AsyncTask<Void, Integer, Boolean> {
 	private final File file;
 	private String wsURL;
 
-	public SaveTask(String wsURL, File file, Product product) {
+	public SaveTask(String wsURL, Product product, File file) {
 		this.product = product;
 		this.file = file;
 		this.wsURL = wsURL;
@@ -48,16 +48,20 @@ public class SaveTask extends AsyncTask<Void, Integer, Boolean> {
 			httpclient.getParams().setParameter(
 					CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 			MultipartEntity mpEntity = new MultipartEntity();
-			FileBody cbFile = new FileBody(file, "image/jpeg");
+			if (file != null) {
+				FileBody cbFile = new FileBody(file, "image/jpeg");
+				mpEntity.addPart("picture", cbFile);
+			}
 			mpEntity.addPart("barcode", new StringBody(product.getBarcode()));
-			mpEntity.addPart("picture", cbFile);
 			mpEntity.addPart("region",
 					new StringBody(System.getProperty("user.region")));
 			mpEntity.addPart("tags",
 					new StringBody(StringUtils.join(product.getTags(), ",")));
 			post.setEntity(mpEntity);
 			httpclient.execute(post);
-			file.delete();
+			if (file != null) {
+				file.delete();
+			}
 		} catch (IOException e) {
 			Log.e("HTTP", "Erreur while uploading product");
 			return false;

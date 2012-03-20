@@ -18,6 +18,9 @@
 
     <string name="app_name">FoodTag</string>
     <string name="app_picker_name">Applications</string>
+    <string name="lbl_halal">"Halal</string>
+    <string name="lbl_kosher">Kosher</string>
+    <string name="lbl_vegetagrian">Vegetagrian</string>
     <string name="button_ok">OK</string>
     <string name="button_save">Save</string>
     <string name="button_search_online">Search on the internet</string>
@@ -60,9 +63,7 @@
     <string name="product_name">Name</string>
     <string name="available_tags">Available tags</string>
     <string name="added_tags">Added tags</string>
-    <!--  
-    <string name="ws_url">"http://192.168.1.3:3000</string>
-    -->
-    <string name="ws_url">"http://foodtag.herokuapp.com</string>
+    <string name="ws_url">http://192.168.1.3:3000</string>
+    <!-- <string name="ws_url">http://foodtag.herokuapp.com</string> -->
 
 </resources>

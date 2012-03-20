@@ -1,7 +1,6 @@
 package com.foodtag;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 
 import android.content.ContentValues;
@@ -36,6 +35,8 @@ public class FoodTagDbOpenHelper extends SQLiteOpenHelper {
 				+ " VALUES('HALAL','Halal','')");
 		db.execSQL("INSERT INTO " + TABLE_NAME_TAGS
 				+ " VALUES('KOSHER','Kosher','')");
+		db.execSQL("INSERT INTO " + TABLE_NAME_TAGS
+				+ " VALUES('VEGETARIAN','Vegetarian','')");
 	}
 
 	@Override
@@ -58,22 +59,13 @@ public class FoodTagDbOpenHelper extends SQLiteOpenHelper {
 		return product;
 	}
 
-	public HashMap<String, Tag> getTags() {
-		HashMap<String, Tag> tags = new HashMap<String, Tag>();
-		Cursor result = getReadableDatabase().query(TABLE_NAME_TAGS, null,
-				null, null, null, null, null);
-		while (result.moveToNext()) {
-			tags.put(
-					result.getString(0),
-					new Tag(result.getString(0), result.getString(1), result
-							.getString(2)));
-		}
-		return tags;
-	}
-
-	public void createNewEntry(Product product) {
+	public void remove(Product product) {
 		getWritableDatabase().delete(TABLE_NAME, "BARCODE = ?",
 				new String[] { product.getBarcode() });
+	}
+
+	public void save(Product product) {
+		remove(product);
 		ContentValues values = new ContentValues();
 		values.put("BARCODE", product.getBarcode());
 		values.put("NAME", product.getName());
@@ -82,11 +74,11 @@ public class FoodTagDbOpenHelper extends SQLiteOpenHelper {
 		getWritableDatabase().insert(TABLE_NAME, "", values);
 	}
 
-	static String join(Collection<String> s, String delimiter) {
+	static String join(Collection<TagEnum> s, String delimiter) {
 		StringBuilder builder = new StringBuilder();
-		Iterator<String> iter = s.iterator();
+		Iterator<TagEnum> iter = s.iterator();
 		while (iter.hasNext()) {
-			builder.append(iter.next());
+			builder.append(iter.next().toString());
 			if (!iter.hasNext()) {
 				break;
 			}

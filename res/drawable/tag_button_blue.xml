@@ -2,5 +2,5 @@
  <selector xmlns:android="http://schemas.android.com/apk/res/android">
      <item android:state_pressed="true"
            android:drawable="@drawable/tag_button_normal_96" /> <!-- pressed -->
-     <item android:drawable="@drawable/tag_button_normal_96" /> <!-- default -->
+     <item android:drawable="@drawable/tag_button_normal_96_unpressed" /> <!-- default -->
  </selector>

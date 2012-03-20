@@ -54,23 +54,41 @@
                 android:scaleType="centerInside" />
         </LinearLayout>
 
-        <RelativeLayout
-            android:id="@+id/relativeLayout1"
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent" >
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingTop="60sp" >
 
-            <include
-                android:id="@+id/found_view"
+            <TextView
+                android:id="@+id/text_name"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                layout="@layout/found" />
+                android:layout_height="wrap_content"
+                android:paddingBottom="10sp"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textColor="@color/tag_title" />
 
-            <include
-                android:id="@+id/not_found_view"
+            <TextView
+                android:id="@+id/lblIngredients"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ingredients"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:id="@+id/text_description"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                layout="@layout/not_found" />
-        </RelativeLayout>
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/tag_container"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal" >
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 
 </merge>

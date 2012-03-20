@@ -21,21 +21,20 @@ import org.json.JSONObject;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.foodtag.FoodTagDbOpenHelper;
 import com.foodtag.FoodTagMainActivity;
 import com.foodtag.Product;
+import com.foodtag.TagEnum;
+import com.foodtag.service.ProductService;
 
 public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 
-	private final FoodTagDbOpenHelper dbOpenHelper;
+	private final ProductService productService;
 	private final FoodTagMainActivity captureActivity;
-	private String wsURL;
 
-	public SearchOnlineTask(String wsURL, FoodTagMainActivity captureActivity,
-			FoodTagDbOpenHelper dbOpenHelper) {
-		this.dbOpenHelper = dbOpenHelper;
+	public SearchOnlineTask(FoodTagMainActivity captureActivity,
+			ProductService productService) {
+		this.productService = productService;
 		this.captureActivity = captureActivity;
-		this.wsURL = wsURL;
 	}
 
 	protected Product doInBackground(String... barcodes) {
@@ -43,8 +42,9 @@ public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 			Product product = null;
 			StringBuilder builder = new StringBuilder();
 			HttpClient client = new DefaultHttpClient();
-			HttpGet httpGet = new HttpGet(wsURL + "/p/" + barcodes[0]
-					+ "?region=" + System.getProperty("user.region"));
+			HttpGet httpGet = new HttpGet(productService.getWsURL() + "/p/"
+					+ barcodes[0] + "?region="
+					+ System.getProperty("user.region"));
 			try {
 				HttpResponse response = client.execute(httpGet);
 				StatusLine statusLine = response.getStatusLine();
@@ -60,17 +60,18 @@ public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 					}
 
 					JSONObject productJson = new JSONObject(builder.toString());
-					Set<String> tagSet = new HashSet<String>();
+					Set<TagEnum> tagSet = new HashSet<TagEnum>();
 					JSONArray jsonArray = productJson.getJSONArray("tags");
 					if (jsonArray != null) {
 						for (int i = 0; i < jsonArray.length(); i++) {
-							tagSet.add(jsonArray.get(i).toString());
+							tagSet.add(TagEnum.valueOf(jsonArray.get(i)
+									.toString()));
 						}
 					}
 					product = new Product(productJson.getString("barcode"),
 							productJson.getString("name"),
 							productJson.getString("ingredients"), tagSet);
-					dbOpenHelper.createNewEntry(product);
+					productService.save(product);
 					product.setPersisted(true);
 
 				} else {

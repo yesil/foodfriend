@@ -1,6 +1,5 @@
 package com.foodtag;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,13 +13,15 @@ public class Product {
 
 	private boolean persisted;
 
-	private final Set<String> tags;
+	private final Set<TagEnum> tags;
 
 	public Product(String barcode, String name, String ingredients,
 			String[] tagsAsString) {
 		super();
-		HashSet<String> tags = new HashSet<String>();
-		tags.addAll(Arrays.asList(tagsAsString));
+		HashSet<TagEnum> tags = new HashSet<TagEnum>();
+		for (String tag : tagsAsString) {
+			tags.add(TagEnum.valueOf(tag));
+		}
 		this.barcode = barcode;
 		this.name = name;
 		this.ingredients = ingredients;
@@ -28,7 +29,7 @@ public class Product {
 	}
 
 	public Product(String barcode, String name, String ingredients,
-			Set<String> tags) {
+			Set<TagEnum> tags) {
 		super();
 		this.barcode = barcode;
 		this.name = name;
@@ -36,7 +37,7 @@ public class Product {
 		this.tags = tags;
 	}
 
-	public void addTag(String productTag) {
+	public void addTag(TagEnum productTag) {
 		tags.add(productTag);
 
 	}
@@ -53,7 +54,7 @@ public class Product {
 		return name;
 	}
 
-	public Set<String> getTags() {
+	public Set<TagEnum> getTags() {
 		return tags;
 	}
 

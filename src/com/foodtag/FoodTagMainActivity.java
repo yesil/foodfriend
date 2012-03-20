@@ -19,9 +19,6 @@ package com.foodtag;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-
-import org.apmem.tools.layouts.FlowLayout;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -49,11 +46,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
@@ -62,9 +59,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.foodtag.camera.CameraManager;
-import com.foodtag.task.LoadImageTask;
-import com.foodtag.task.SaveTask;
-import com.foodtag.task.SearchOnlineTask;
+import com.foodtag.service.ProductService;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
 import com.google.zxing.ResultPoint;
@@ -81,7 +76,7 @@ import com.google.zxing.ResultPoint;
  */
 public final class FoodTagMainActivity extends Activity implements
 		SurfaceHolder.Callback, OnCheckedChangeListener, OnClickListener,
-		OnTouchListener {
+		OnTouchListener, OnLongClickListener {
 
 	private static final String TAG = FoodTagMainActivity.class.getSimpleName();
 
@@ -100,24 +95,23 @@ public final class FoodTagMainActivity extends Activity implements
 	private String characterSet;
 	private InactivityTimer inactivityTimer;
 	private BeepManager beepManager;
-	private FoodTagDbOpenHelper dbOpenHelper;
 	private GestureDetector gestureDetector;
 	private AlertDialog dialog;
 	private EditText inputBarcode;
-	private ViewGroup foundView;
-	private ViewGroup notFoundView;
 
 	private Product product;
 
-	private FlowLayout tagContainer;
-
-	private FlowLayout tagContainerNotAdded;
-
-	private FlowLayout tagContainerAdded;
-
-	private String wsURL;
+	private ViewGroup tagContainer;
 
 	private File tempFile;
+
+	private ProductService productService;
+
+	private View btnHalal;
+
+	private View btnKosher;
+
+	private View btnVegetarian;
 
 	public ViewfinderView getViewfinderView() {
 		return viewfinderView;
@@ -134,8 +128,8 @@ public final class FoodTagMainActivity extends Activity implements
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-		// new
-		// ContextWrapper(this).deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
+		new ContextWrapper(this)
+				.deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.capture);
@@ -148,19 +142,30 @@ public final class FoodTagMainActivity extends Activity implements
 		hasSurface = false;
 		inactivityTimer = new InactivityTimer(this);
 		beepManager = new BeepManager(this);
-		dbOpenHelper = new FoodTagDbOpenHelper(this);
+
 		inputBarcode = new EditText(this);
 		inputBarcode.setInputType(InputType.TYPE_CLASS_NUMBER);
 
-		tagContainer = (FlowLayout) findViewById(R.id.tag_container);
-		foundView = (ViewGroup) findViewById(R.id.found_view);
-		notFoundView = (ViewGroup) findViewById(R.id.not_found_view);
-		tagContainerAdded = (FlowLayout) findViewById(R.id.tag_container_added);
-		tagContainerNotAdded = (FlowLayout) findViewById(R.id.tag_container_not_added);
+		tagContainer = (ViewGroup) findViewById(R.id.tag_container);
 
-		foundView.setVisibility(View.GONE);
-		notFoundView.setVisibility(View.GONE);
-		wsURL = getString(R.string.ws_url);
+		TagEnum.HALAL.setLabel(getString(R.string.lbl_halal));
+		TagEnum.KOSHER.setLabel(getString(R.string.lbl_kosher));
+		TagEnum.VEGETARIAN.setLabel(getString(R.string.lbl_vegetagrian));
+
+		btnHalal = new TagButton(TagEnum.HALAL, this);
+		btnHalal.setOnClickListener(this);
+		tagContainer.addView(btnHalal);
+
+		btnKosher = new TagButton(TagEnum.KOSHER, this);
+		btnKosher.setOnClickListener(this);
+		tagContainer.addView(btnKosher);
+
+		btnVegetarian = new TagButton(TagEnum.VEGETARIAN, this);
+		btnVegetarian.setOnClickListener(this);
+		tagContainer.addView(btnVegetarian);
+
+		productService = new ProductService(new FoodTagDbOpenHelper(this),
+				getString(R.string.ws_url));
 
 	}
 
@@ -316,7 +321,7 @@ public final class FoodTagMainActivity extends Activity implements
 	 */
 	public void handleDecode(Result rawResult, Bitmap barcode) {
 		inactivityTimer.onActivity();
-		product = dbOpenHelper.findByBarcode(rawResult.getText());
+		product = productService.findByBarcode(rawResult.getText());
 
 		if (barcode == null) {
 			// This is from history -- no saved barcode
@@ -392,13 +397,13 @@ public final class FoodTagMainActivity extends Activity implements
 	private void handleDecodeInternally(String barcode, Bitmap barcodeImage,
 			boolean searchOnline) {
 		if (searchOnline) {
-			new SearchOnlineTask(wsURL, this, dbOpenHelper)
-					.execute(new String[] { product.getBarcode() });
+			productService.searchOnline(this, barcode);
 		}
 
 		viewfinderView.setVisibility(View.GONE);
 		resultView.setVisibility(View.VISIBLE);
 		ImageView barcodeImageView = (ImageView) findViewById(R.id.barcode_image_view);
+		barcodeImageView.setOnLongClickListener(this);
 		if (barcodeImage != null) {
 			barcodeImageView.setImageBitmap(barcodeImage);
 		} else if (!product.isPersisted()) {
@@ -408,7 +413,7 @@ public final class FoodTagMainActivity extends Activity implements
 		if (product.isPersisted()) {
 			barcodeImageView.setVisibility(View.VISIBLE);
 			if (!searchOnline) {
-				new LoadImageTask(wsURL, barcodeImageView).execute(barcode);
+				productService.loadImage(barcodeImageView, barcode);
 			}
 		}
 
@@ -422,32 +427,27 @@ public final class FoodTagMainActivity extends Activity implements
 				PreferencesActivity.KEY_SUPPLEMENTAL, true)) {
 		}
 
-		foundView.setVisibility(product.isPersisted() ? View.VISIBLE
-				: View.GONE);
-		notFoundView.setVisibility(product.isPersisted() ? View.GONE
-				: View.VISIBLE);
+		btnHalal.setPressed(false);
+		btnKosher.setPressed(false);
+		btnVegetarian.setPressed(false);
 
 		if (product.isPersisted()) {
-			tagContainer.removeAllViews();
-			HashMap<String, Tag> tags = dbOpenHelper.getTags();
-			for (String tagAsString : product.getTags()) {
-				if (tagAsString != null && !"".equals(tagAsString)) {
-					TagButton b = new TagButton(tags.get(tagAsString), this);
-					tagContainer.addView(b);
+			for (TagEnum tag : product.getTags()) {
+				// TODO à implémenter
+				switch (tag) {
+				case HALAL:
+					btnHalal.setPressed(true);
+					break;
+				case KOSHER:
+					btnKosher.setPressed(true);
+					break;
+				case VEGETARIAN:
+					btnVegetarian.setPressed(true);
+					break;
+				default:
+					break;
 				}
 			}
-		} else {
-			tagContainerAdded.removeAllViews();
-			tagContainerNotAdded.removeAllViews();
-			HashMap<String, Tag> tags = dbOpenHelper.getTags();
-			for (String tagAsString : tags.keySet()) {
-				TagButton b = new TagButton(tags.get(tagAsString), this);
-				b.setOnClickListener(this);
-				tagContainerNotAdded.addView(b);
-			}
-
-			Button newEntryButton = (Button) findViewById(R.id.btn_save_entry);
-			newEntryButton.setOnClickListener(this);
 		}
 	}
 
@@ -507,25 +507,11 @@ public final class FoodTagMainActivity extends Activity implements
 
 	@Override
 	public void onClick(View v) {
-		if (TagButton.class.equals(v.getClass())) {
+		if (v instanceof TagButton) {
 			TagButton b = (TagButton) v;
-			if (v.getParent() == tagContainerAdded) {
-				tagContainerAdded.removeView(b);
-				tagContainerNotAdded.addView(b);
-				product.removeTag(b.getProductTag().getCode());
-			} else {
-				tagContainerNotAdded.removeView(b);
-				tagContainerAdded.addView(b);
-				product.addTag(b.getProductTag().getCode());
-			}
-
-		} else {
-			switch (v.getId()) {
-			default:
-				// dbOpenHelper.createNewEntry(product);
-				// resetStatusView();
-				takePhoto();
-			}
+			boolean pressed = productService.addRemoveTag(product,
+					b.getProductTag());
+			b.setPressed(pressed);
 		}
 	}
 
@@ -541,7 +527,7 @@ public final class FoodTagMainActivity extends Activity implements
 										int whichButton) {
 									String barcode = inputBarcode.getText()
 											.toString();
-									product = dbOpenHelper
+									product = productService
 											.findByBarcode(barcode);
 									handleDecodeInternally(barcode, null, true);
 								}
@@ -584,8 +570,14 @@ public final class FoodTagMainActivity extends Activity implements
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == CAMERA_PIC_REQUEST) {
-			new SaveTask(wsURL, tempFile, product).execute(null);
+			productService.save(product);
 		}
 		resetStatusView();
+	}
+
+	@Override
+	public boolean onLongClick(View arg0) {
+		takePhoto();
+		return true;
 	}
 }
