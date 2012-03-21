@@ -5,7 +5,6 @@ import java.io.Serializable;
 
 import android.widget.ImageView;
 
-import com.foodtag.FoodTagDbOpenHelper;
 import com.foodtag.FoodTagMainActivity;
 import com.foodtag.Product;
 import com.foodtag.TagEnum;
@@ -15,18 +14,21 @@ import com.foodtag.task.SearchOnlineTask;
 
 public class ProductService implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 2311832181163174393L;
-
-	private final FoodTagDbOpenHelper dbOpenHelper;
 
 	private final String wsURL;
 
-	public ProductService(FoodTagDbOpenHelper dbOpenHelper, String wsURL) {
+	private final FoodTagMainActivity captureActivity;
+
+	private boolean searching;
+
+	private boolean loadingImage;
+
+	private boolean saving;
+
+	public ProductService(FoodTagMainActivity captureActivity, String wsURL) {
+		this.captureActivity = captureActivity;
 		this.wsURL = wsURL;
-		this.dbOpenHelper = dbOpenHelper;
 	}
 
 	public boolean addRemoveTag(Product product, TagEnum tag) {
@@ -41,29 +43,52 @@ public class ProductService implements Serializable {
 		return added;
 	}
 
-	public Product findByBarcode(String barcode) {
-		return dbOpenHelper.findByBarcode(barcode);
-	}
-
 	public String getWsURL() {
 		return wsURL;
 	}
 
 	public void loadImage(ImageView barcodeImageView, String barcode) {
-		new LoadImageTask(wsURL, barcodeImageView).execute(barcode);
-
+		loadingImage = true;
+		new LoadImageTask(this, wsURL, barcodeImageView).execute(barcode);
+		showHideProgress();
 	}
 
 	public void save(Product product) {
-		dbOpenHelper.remove(product);
-		new SaveTask(wsURL, product, null).execute((Void) null);
+		saving = true;
+		new SaveTask(this, wsURL, product, null).execute((Void) null);
+		showHideProgress();
 	}
 
 	public void save(Product product, File tempFile) {
-		new SaveTask(wsURL, product, tempFile).execute((Void) null);
+		saving = true;
+		new SaveTask(this, wsURL, product, tempFile).execute((Void) null);
+		showHideProgress();
 	}
 
-	public void searchOnline(FoodTagMainActivity activity, String barcode) {
-		new SearchOnlineTask(activity, this).execute(new String[] { barcode });
+	public void searchOnline(String barcode) {
+		searching = true;
+		new SearchOnlineTask(this).execute(new String[] { barcode });
+		showHideProgress();
 	}
+
+	public void loadingImageFinished() {
+		loadingImage = false;
+		showHideProgress();
+	}
+
+	public void savingFinished() {
+		saving = false;
+		showHideProgress();
+	}
+
+	public void searchFinished(Product product) {
+		searching = false;
+		showHideProgress();
+		captureActivity.productFound(product);
+	}
+
+	private void showHideProgress() {
+		captureActivity.showHideProgress(searching || loadingImage || saving);
+	}
+
 }

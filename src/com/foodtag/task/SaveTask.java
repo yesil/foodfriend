@@ -19,15 +19,20 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.foodtag.FoodTagMainActivity;
 import com.foodtag.Product;
+import com.foodtag.service.ProductService;
 
 public class SaveTask extends AsyncTask<Void, Integer, Boolean> {
 
 	private final Product product;
 	private final File file;
 	private String wsURL;
+	private final ProductService productService;
 
-	public SaveTask(String wsURL, Product product, File file) {
+	public SaveTask(ProductService productService, String wsURL,
+			Product product, File file) {
+		this.productService = productService;
 		this.product = product;
 		this.file = file;
 		this.wsURL = wsURL;
@@ -67,5 +72,10 @@ public class SaveTask extends AsyncTask<Void, Integer, Boolean> {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	protected void onPostExecute(Boolean result) {
+		productService.savingFinished();
 	}
 }

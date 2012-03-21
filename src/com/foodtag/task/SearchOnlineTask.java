@@ -29,12 +29,9 @@ import com.foodtag.service.ProductService;
 public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 
 	private final ProductService productService;
-	private final FoodTagMainActivity captureActivity;
 
-	public SearchOnlineTask(FoodTagMainActivity captureActivity,
-			ProductService productService) {
+	public SearchOnlineTask(ProductService productService) {
 		this.productService = productService;
-		this.captureActivity = captureActivity;
 	}
 
 	protected Product doInBackground(String... barcodes) {
@@ -62,6 +59,7 @@ public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 					JSONObject productJson = new JSONObject(builder.toString());
 					Set<TagEnum> tagSet = new HashSet<TagEnum>();
 					JSONArray jsonArray = productJson.getJSONArray("tags");
+					boolean locked = productJson.getBoolean("locked");
 					if (jsonArray != null) {
 						for (int i = 0; i < jsonArray.length(); i++) {
 							tagSet.add(TagEnum.valueOf(jsonArray.get(i)
@@ -70,10 +68,8 @@ public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 					}
 					product = new Product(productJson.getString("barcode"),
 							productJson.getString("name"),
-							productJson.getString("ingredients"), tagSet);
-					productService.save(product);
-					product.setPersisted(true);
-
+							productJson.getString("ingredients"), tagSet,
+							locked);
 				} else {
 					Log.e(getClass().toString(), "Failed to download file");
 				}
@@ -93,7 +89,7 @@ public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 	@Override
 	protected void onPostExecute(Product result) {
 		if (result != null) {
-			captureActivity.productFound(result);
+			productService.searchFinished(result);
 		}
 	}
 

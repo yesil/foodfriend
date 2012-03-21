@@ -1,6 +1,5 @@
 package com.foodtag;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public class Product {
@@ -11,30 +10,22 @@ public class Product {
 
 	private String name;
 
-	private boolean persisted;
+	private final boolean locked;
+
+	public boolean isLocked() {
+		return locked;
+	}
 
 	private final Set<TagEnum> tags;
 
 	public Product(String barcode, String name, String ingredients,
-			String[] tagsAsString) {
-		super();
-		HashSet<TagEnum> tags = new HashSet<TagEnum>();
-		for (String tag : tagsAsString) {
-			tags.add(TagEnum.valueOf(tag));
-		}
-		this.barcode = barcode;
-		this.name = name;
-		this.ingredients = ingredients;
-		this.tags = tags;
-	}
-
-	public Product(String barcode, String name, String ingredients,
-			Set<TagEnum> tags) {
+			Set<TagEnum> tags, boolean locked) {
 		super();
 		this.barcode = barcode;
 		this.name = name;
 		this.ingredients = ingredients;
 		this.tags = tags;
+		this.locked = locked;
 	}
 
 	public void addTag(TagEnum productTag) {
@@ -58,10 +49,6 @@ public class Product {
 		return tags;
 	}
 
-	public boolean isPersisted() {
-		return persisted;
-	}
-
 	public void removeTag(String productTag) {
 		tags.remove(productTag);
 	}
@@ -72,9 +59,5 @@ public class Product {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public void setPersisted(boolean persisted) {
-		this.persisted = persisted;
 	}
 }

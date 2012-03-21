@@ -9,17 +9,11 @@ public class TagButton extends ToggleButton {
 	private TagEnum productTag;
 
 	public TagButton(Context context, AttributeSet attributeSet) {
-		this(null, context);
-	}
-
-	public TagButton(TagEnum productTag, Context context) {
-		super(context);
-		this.productTag = productTag;
+		super(context, attributeSet);
 		this.setFocusable(false);
 		setDrawingCacheEnabled(true);
 		this.setBackgroundDrawable(context.getResources().getDrawable(
 				R.drawable.tag_button_blue));
-		this.setText(productTag.getLabel());
 		this.setTextSize(18f);
 	}
 
@@ -27,7 +21,9 @@ public class TagButton extends ToggleButton {
 		return productTag;
 	}
 
-	public void setProductTag(String TagEnum) {
+	public void setProductTag(TagEnum productTag) {
 		this.productTag = productTag;
+		this.setTextOn(productTag.getLabel());
+		this.setTextOff(productTag.getLabel());
 	}
 }

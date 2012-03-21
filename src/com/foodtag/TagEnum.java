@@ -1,7 +1,7 @@
 package com.foodtag;
 
 public enum TagEnum {
-	HALAL, KOSHER, VEGETARIAN;
+	TAG, HALAL, KOSHER, VEGETARIAN;
 
 	private String label;
 

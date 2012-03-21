@@ -1,7 +1,6 @@
 package com.foodtag.task;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -15,12 +14,17 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.foodtag.service.ProductService;
+
 public class LoadImageTask extends AsyncTask<String, Integer, Bitmap> {
 
 	private final ImageView barcodeImageView;
 	private String wsURL;
+	private final ProductService productService;
 
-	public LoadImageTask(String wsURL, ImageView barcodeImageView) {
+	public LoadImageTask(ProductService productService, String wsURL,
+			ImageView barcodeImageView) {
+		this.productService = productService;
 		this.barcodeImageView = barcodeImageView;
 		this.wsURL = wsURL;
 	}
@@ -58,6 +62,7 @@ public class LoadImageTask extends AsyncTask<String, Integer, Bitmap> {
 	@Override
 	protected void onPostExecute(Bitmap result) {
 		if (result != null) {
+			productService.loadingImageFinished();
 			barcodeImageView.setImageBitmap(result);
 		}
 	}

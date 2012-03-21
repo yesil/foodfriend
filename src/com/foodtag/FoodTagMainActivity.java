@@ -19,10 +19,10 @@ package com.foodtag;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -48,13 +48,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -70,13 +68,13 @@ import com.google.zxing.ResultPoint;
  * shows feedback as the image processing is happening, and then overlays the
  * results when a scan is successful.
  * 
- * @author Ilyas Türkben yesilturk@gmail.com
+ * @author Ilyas Stéphane Türkben yesilturk@gmail.com
  * @author dswitkin@google.com (Daniel Switkin)
  * @author Sean Owen
  */
 public final class FoodTagMainActivity extends Activity implements
-		SurfaceHolder.Callback, OnCheckedChangeListener, OnClickListener,
-		OnTouchListener, OnLongClickListener {
+		SurfaceHolder.Callback, OnClickListener, OnTouchListener,
+		OnLongClickListener {
 
 	private static final String TAG = FoodTagMainActivity.class.getSimpleName();
 
@@ -101,17 +99,19 @@ public final class FoodTagMainActivity extends Activity implements
 
 	private Product product;
 
-	private ViewGroup tagContainer;
-
 	private File tempFile;
 
 	private ProductService productService;
 
-	private View btnHalal;
+	private TagButton btnHalal;
 
-	private View btnKosher;
+	private TagButton btnKosher;
 
-	private View btnVegetarian;
+	private TagButton btnVegetarian;
+
+	private ProgressBar pbLoading;
+
+	private ImageView barcodeImageView;
 
 	public ViewfinderView getViewfinderView() {
 		return viewfinderView;
@@ -128,8 +128,8 @@ public final class FoodTagMainActivity extends Activity implements
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-		new ContextWrapper(this)
-				.deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
+		// new
+		// ContextWrapper(this).deleteDatabase(FoodTagDbOpenHelper.DATABASE_NAME);
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.capture);
@@ -146,26 +146,28 @@ public final class FoodTagMainActivity extends Activity implements
 		inputBarcode = new EditText(this);
 		inputBarcode.setInputType(InputType.TYPE_CLASS_NUMBER);
 
-		tagContainer = (ViewGroup) findViewById(R.id.tag_container);
-
 		TagEnum.HALAL.setLabel(getString(R.string.lbl_halal));
 		TagEnum.KOSHER.setLabel(getString(R.string.lbl_kosher));
 		TagEnum.VEGETARIAN.setLabel(getString(R.string.lbl_vegetagrian));
 
-		btnHalal = new TagButton(TagEnum.HALAL, this);
+		btnHalal = (TagButton) findViewById(R.id.btn_halal);
+		btnHalal.setProductTag(TagEnum.HALAL);
 		btnHalal.setOnClickListener(this);
-		tagContainer.addView(btnHalal);
 
-		btnKosher = new TagButton(TagEnum.KOSHER, this);
+		btnKosher = (TagButton) findViewById(R.id.btn_kosher);
+		btnKosher.setProductTag(TagEnum.KOSHER);
 		btnKosher.setOnClickListener(this);
-		tagContainer.addView(btnKosher);
 
-		btnVegetarian = new TagButton(TagEnum.VEGETARIAN, this);
+		btnVegetarian = (TagButton) findViewById(R.id.btn_vegetarian);
+		btnVegetarian.setProductTag(TagEnum.VEGETARIAN);
 		btnVegetarian.setOnClickListener(this);
-		tagContainer.addView(btnVegetarian);
 
-		productService = new ProductService(new FoodTagDbOpenHelper(this),
-				getString(R.string.ws_url));
+		pbLoading = (ProgressBar) findViewById(R.id.progress_bar_loading);
+
+		barcodeImageView = (ImageView) findViewById(R.id.barcode_image_view);
+		barcodeImageView.setOnLongClickListener(this);
+
+		productService = new ProductService(this, getString(R.string.ws_url));
 
 	}
 
@@ -321,8 +323,6 @@ public final class FoodTagMainActivity extends Activity implements
 	 */
 	public void handleDecode(Result rawResult, Bitmap barcode) {
 		inactivityTimer.onActivity();
-		product = productService.findByBarcode(rawResult.getText());
-
 		if (barcode == null) {
 			// This is from history -- no saved barcode
 			handleDecodeInternally(rawResult.getText(), null, true);
@@ -342,6 +342,8 @@ public final class FoodTagMainActivity extends Activity implements
 				}
 				resetStatusView();
 			} else {
+				product = new Product(rawResult.getText(), "Product name", "ingredients",
+						new HashSet<TagEnum>(), false);
 				handleDecodeInternally(rawResult.getText(), barcode, true);
 			}
 		}
@@ -397,57 +399,26 @@ public final class FoodTagMainActivity extends Activity implements
 	private void handleDecodeInternally(String barcode, Bitmap barcodeImage,
 			boolean searchOnline) {
 		if (searchOnline) {
-			productService.searchOnline(this, barcode);
+			productService.searchOnline(barcode);
 		}
 
 		viewfinderView.setVisibility(View.GONE);
 		resultView.setVisibility(View.VISIBLE);
-		ImageView barcodeImageView = (ImageView) findViewById(R.id.barcode_image_view);
-		barcodeImageView.setOnLongClickListener(this);
 		if (barcodeImage != null) {
 			barcodeImageView.setImageBitmap(barcodeImage);
-		} else if (!product.isPersisted()) {
-			barcodeImageView.setVisibility(View.INVISIBLE);
-			barcodeImageView.setImageBitmap(null);
+		} else {
+			productService.loadImage(barcodeImageView, barcode);
 		}
-		if (product.isPersisted()) {
-			barcodeImageView.setVisibility(View.VISIBLE);
-			if (!searchOnline) {
-				productService.loadImage(barcodeImageView, barcode);
-			}
+		if (product != null) {
+			TextView txtName = (TextView) findViewById(R.id.text_name);
+			txtName.setText(product.getName());
+
+			TextView txtDescription = (TextView) findViewById(R.id.text_description);
+			txtDescription.setText(product.getIngredients());
 		}
-
-		TextView txtName = (TextView) findViewById(R.id.text_name);
-		txtName.setText(product.getName());
-
-		TextView txtDescription = (TextView) findViewById(R.id.text_description);
-		txtDescription.setText(product.getIngredients());
 
 		if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
 				PreferencesActivity.KEY_SUPPLEMENTAL, true)) {
-		}
-
-		btnHalal.setPressed(false);
-		btnKosher.setPressed(false);
-		btnVegetarian.setPressed(false);
-
-		if (product.isPersisted()) {
-			for (TagEnum tag : product.getTags()) {
-				// TODO à implémenter
-				switch (tag) {
-				case HALAL:
-					btnHalal.setPressed(true);
-					break;
-				case KOSHER:
-					btnKosher.setPressed(true);
-					break;
-				case VEGETARIAN:
-					btnVegetarian.setPressed(true);
-					break;
-				default:
-					break;
-				}
-			}
 		}
 	}
 
@@ -487,9 +458,14 @@ public final class FoodTagMainActivity extends Activity implements
 	private void resetStatusView() {
 		resultView.setVisibility(View.GONE);
 		viewfinderView.setVisibility(View.VISIBLE);
+		pbLoading.setVisibility(View.GONE);
+
 		if (handler != null) {
 			handler.restartPreviewAndDecode();
 		}
+		btnHalal.setChecked(false);
+		btnKosher.setChecked(false);
+		btnVegetarian.setChecked(false);
 	}
 
 	public void drawViewfinder() {
@@ -497,21 +473,10 @@ public final class FoodTagMainActivity extends Activity implements
 	}
 
 	@Override
-	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		switch (buttonView.getId()) {
-		default:
-			break;
-		}
-
-	}
-
-	@Override
 	public void onClick(View v) {
 		if (v instanceof TagButton) {
 			TagButton b = (TagButton) v;
-			boolean pressed = productService.addRemoveTag(product,
-					b.getProductTag());
-			b.setPressed(pressed);
+			productService.addRemoveTag(product, b.getProductTag());
 		}
 	}
 
@@ -527,9 +492,7 @@ public final class FoodTagMainActivity extends Activity implements
 										int whichButton) {
 									String barcode = inputBarcode.getText()
 											.toString();
-									product = productService
-											.findByBarcode(barcode);
-									handleDecodeInternally(barcode, null, true);
+									productService.searchOnline(barcode);
 								}
 							})
 					.setNegativeButton(R.string.button_cancel,
@@ -550,27 +513,51 @@ public final class FoodTagMainActivity extends Activity implements
 		return false;
 	}
 
+	public void showHideProgress(boolean visible) {
+		int visibility = visible ? View.VISIBLE : View.GONE;
+		pbLoading.setVisibility(visibility);
+	}
+
 	public void productFound(Product result) {
 		this.product = result;
 		handleDecodeInternally(product.getBarcode(), null, false);
+		for (TagEnum tag : product.getTags()) {
+			// TODO à implémenter
+			switch (tag) {
+			case HALAL:
+				btnHalal.setChecked(true);
+				break;
+			case KOSHER:
+				btnKosher.setChecked(true);
+				break;
+			case VEGETARIAN:
+				btnVegetarian.setChecked(true);
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	private void takePhoto() {
-		Intent cameraIntent = new Intent(
-				android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-		try {
-			tempFile = File.createTempFile("foodtag", "jpg").getAbsoluteFile();
-			cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,
-					Uri.fromFile(tempFile));
-		} catch (IOException e) {
-			resetStatusView();
+		if (!product.isLocked()) {
+			Intent cameraIntent = new Intent(
+					android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+			try {
+				tempFile = File.createTempFile("foodtag", "jpg")
+						.getAbsoluteFile();
+				cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+						Uri.fromFile(tempFile));
+			} catch (IOException e) {
+				resetStatusView();
+			}
+			startActivityForResult(cameraIntent, CAMERA_PIC_REQUEST);
 		}
-		startActivityForResult(cameraIntent, CAMERA_PIC_REQUEST);
 	}
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == CAMERA_PIC_REQUEST) {
-			productService.save(product);
+			productService.save(product, tempFile);
 		}
 		resetStatusView();
 	}
