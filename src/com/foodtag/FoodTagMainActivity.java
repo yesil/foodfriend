@@ -528,7 +528,7 @@ public final class FoodTagMainActivity extends Activity implements
 								textView.setText(text);
 								if (titleCode == R.string.title_enter_name) {
 									product.setName(text);
-								} else if (titleCode == R.string.title_enter_name) {
+								} else if (titleCode == R.string.title_enter_ingredients) {
 									product.setIngredients(text);
 								}
 								productService.save(product);
