@@ -21,7 +21,6 @@ import org.json.JSONObject;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.foodtag.FoodTagMainActivity;
 import com.foodtag.Product;
 import com.foodtag.TagEnum;
 import com.foodtag.service.ProductService;

@@ -23,6 +23,7 @@ import java.util.HashSet;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -37,17 +38,14 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
-import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -73,8 +71,7 @@ import com.google.zxing.ResultPoint;
  * @author Sean Owen
  */
 public final class FoodTagMainActivity extends Activity implements
-		SurfaceHolder.Callback, OnClickListener, OnTouchListener,
-		OnLongClickListener {
+		SurfaceHolder.Callback, OnClickListener, OnLongClickListener {
 
 	private static final String TAG = FoodTagMainActivity.class.getSimpleName();
 
@@ -93,9 +90,8 @@ public final class FoodTagMainActivity extends Activity implements
 	private String characterSet;
 	private InactivityTimer inactivityTimer;
 	private BeepManager beepManager;
-	private GestureDetector gestureDetector;
 	private AlertDialog dialog;
-	private EditText inputBarcode;
+	private EditText editInputBarcode;
 
 	private Product product;
 
@@ -112,6 +108,10 @@ public final class FoodTagMainActivity extends Activity implements
 	private ProgressBar pbLoading;
 
 	private ImageView barcodeImageView;
+
+	private TextView textName;
+
+	private TextView textIngredients;
 
 	public ViewfinderView getViewfinderView() {
 		return viewfinderView;
@@ -133,18 +133,19 @@ public final class FoodTagMainActivity extends Activity implements
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.capture);
-		window.getDecorView().setOnTouchListener(this);
-		gestureDetector = new GestureDetector(new GestureListener(this));
 
 		resultView = findViewById(R.id.result_view);
+
+		viewfinderView = (ViewfinderView) findViewById(R.id.viewfinder_view);
+		viewfinderView.setOnLongClickListener(this);
 
 		handler = null;
 		hasSurface = false;
 		inactivityTimer = new InactivityTimer(this);
 		beepManager = new BeepManager(this);
 
-		inputBarcode = new EditText(this);
-		inputBarcode.setInputType(InputType.TYPE_CLASS_NUMBER);
+		editInputBarcode = new EditText(this);
+		editInputBarcode.setInputType(InputType.TYPE_CLASS_NUMBER);
 
 		TagEnum.HALAL.setLabel(getString(R.string.lbl_halal));
 		TagEnum.KOSHER.setLabel(getString(R.string.lbl_kosher));
@@ -161,6 +162,11 @@ public final class FoodTagMainActivity extends Activity implements
 		btnVegetarian = (TagButton) findViewById(R.id.btn_vegetarian);
 		btnVegetarian.setProductTag(TagEnum.VEGETARIAN);
 		btnVegetarian.setOnClickListener(this);
+
+		textName = (TextView) findViewById(R.id.text_name);
+		textName.setOnLongClickListener(this);
+		textIngredients = (TextView) findViewById(R.id.text_description);
+		textIngredients.setOnLongClickListener(this);
 
 		pbLoading = (ProgressBar) findViewById(R.id.progress_bar_loading);
 
@@ -184,7 +190,6 @@ public final class FoodTagMainActivity extends Activity implements
 		// off screen.
 		cameraManager = new CameraManager(getApplication());
 
-		viewfinderView = (ViewfinderView) findViewById(R.id.viewfinder_view);
 		viewfinderView.setCameraManager(cameraManager);
 
 		resetStatusView();
@@ -342,8 +347,8 @@ public final class FoodTagMainActivity extends Activity implements
 				}
 				resetStatusView();
 			} else {
-				product = new Product(rawResult.getText(), "Product name", "ingredients",
-						new HashSet<TagEnum>(), false);
+				product = new Product(rawResult.getText(), "Product name",
+						"ingredients", new HashSet<TagEnum>(), false);
 				handleDecodeInternally(rawResult.getText(), barcode, true);
 			}
 		}
@@ -485,12 +490,12 @@ public final class FoodTagMainActivity extends Activity implements
 			dialog = new AlertDialog.Builder(this)
 					.setTitle(R.string.enter_barcode)
 					.setMessage("")
-					.setView(inputBarcode)
+					.setView(editInputBarcode)
 					.setPositiveButton(R.string.button_ok,
 							new DialogInterface.OnClickListener() {
 								public void onClick(DialogInterface dialog,
 										int whichButton) {
-									String barcode = inputBarcode.getText()
+									String barcode = editInputBarcode.getText()
 											.toString();
 									productService.searchOnline(barcode);
 								}
@@ -503,14 +508,39 @@ public final class FoodTagMainActivity extends Activity implements
 								}
 							}).show();
 		}
-		inputBarcode.setText("");
+		editInputBarcode.getText().clear();
 		dialog.show();
 	}
 
-	@Override
-	public boolean onTouch(View v, MotionEvent event) {
-		gestureDetector.onTouchEvent(event);
-		return false;
+	public void showInputText(final int titleCode, final TextView textView) {
+		final EditText editProductText = new EditText(this);
+		editProductText.setInputType(InputType.TYPE_CLASS_TEXT);
+		AlertDialog inputTextDialog = new AlertDialog.Builder(this)
+				.setTitle(getString(titleCode))
+				.setMessage("")
+				.setView(editProductText)
+				.setPositiveButton(R.string.button_ok,
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+									int whichButton) {
+								String text = editProductText.getText()
+										.toString();
+								textView.setText(text);
+								if (titleCode == R.string.title_enter_name) {
+									product.setName(text);
+								} else if (titleCode == R.string.title_enter_name) {
+									product.setIngredients(text);
+								}
+								productService.save(product);
+							}
+						})
+				.setNegativeButton(R.string.button_cancel,
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+									int whichButton) {
+							}
+						}).show();
+		inputTextDialog.show();
 	}
 
 	public void showHideProgress(boolean visible) {
@@ -563,8 +593,18 @@ public final class FoodTagMainActivity extends Activity implements
 	}
 
 	@Override
-	public boolean onLongClick(View arg0) {
-		takePhoto();
+	public boolean onLongClick(View view) {
+		if (view == viewfinderView) {
+			showKeyboard();
+		} else if (view == textName) {
+			showInputText(R.string.title_enter_name, textName);
+
+		} else if (view == textIngredients) {
+			showInputText(R.string.title_enter_ingredients, textIngredients);
+
+		} else if (view == barcodeImageView) {
+			takePhoto();
+		}
 		return true;
 	}
 }

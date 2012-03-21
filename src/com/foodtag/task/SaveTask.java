@@ -19,7 +19,6 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.foodtag.FoodTagMainActivity;
 import com.foodtag.Product;
 import com.foodtag.service.ProductService;
 
@@ -58,6 +57,9 @@ public class SaveTask extends AsyncTask<Void, Integer, Boolean> {
 				mpEntity.addPart("picture", cbFile);
 			}
 			mpEntity.addPart("barcode", new StringBody(product.getBarcode()));
+			mpEntity.addPart("name", new StringBody(product.getName()));
+			mpEntity.addPart("ingredients",
+					new StringBody(product.getIngredients()));
 			mpEntity.addPart("region",
 					new StringBody(System.getProperty("user.region")));
 			mpEntity.addPart("tags",
