@@ -19,11 +19,9 @@ package com.foodtag;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -111,7 +109,7 @@ public final class FoodTagMainActivity extends Activity implements
 
 	private TextView textName;
 
-	private TextView textIngredients;
+	private TextView textDescription;
 
 	public ViewfinderView getViewfinderView() {
 		return viewfinderView;
@@ -147,26 +145,19 @@ public final class FoodTagMainActivity extends Activity implements
 		editInputBarcode = new EditText(this);
 		editInputBarcode.setInputType(InputType.TYPE_CLASS_NUMBER);
 
-		TagEnum.HALAL.setLabel(getString(R.string.lbl_halal));
-		TagEnum.KOSHER.setLabel(getString(R.string.lbl_kosher));
-		TagEnum.VEGETARIAN.setLabel(getString(R.string.lbl_vegetagrian));
-
 		btnHalal = (TagButton) findViewById(R.id.btn_halal);
-		btnHalal.setProductTag(TagEnum.HALAL);
 		btnHalal.setOnClickListener(this);
 
 		btnKosher = (TagButton) findViewById(R.id.btn_kosher);
-		btnKosher.setProductTag(TagEnum.KOSHER);
 		btnKosher.setOnClickListener(this);
 
 		btnVegetarian = (TagButton) findViewById(R.id.btn_vegetarian);
-		btnVegetarian.setProductTag(TagEnum.VEGETARIAN);
 		btnVegetarian.setOnClickListener(this);
 
 		textName = (TextView) findViewById(R.id.text_name);
 		textName.setOnLongClickListener(this);
-		textIngredients = (TextView) findViewById(R.id.text_description);
-		textIngredients.setOnLongClickListener(this);
+		textDescription = (TextView) findViewById(R.id.text_description);
+		textDescription.setOnLongClickListener(this);
 
 		pbLoading = (ProgressBar) findViewById(R.id.progress_bar_loading);
 
@@ -347,8 +338,7 @@ public final class FoodTagMainActivity extends Activity implements
 				}
 				resetStatusView();
 			} else {
-				product = new Product(rawResult.getText(), "Product name",
-						"ingredients", new HashSet<TagEnum>(), false);
+				product = new Product(rawResult.getText(), "", "", false);
 				handleDecodeInternally(rawResult.getText(), barcode, true);
 			}
 		}
@@ -419,7 +409,7 @@ public final class FoodTagMainActivity extends Activity implements
 			txtName.setText(product.getName());
 
 			TextView txtDescription = (TextView) findViewById(R.id.text_description);
-			txtDescription.setText(product.getIngredients());
+			txtDescription.setText(product.getDescription());
 		}
 
 		if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
@@ -481,7 +471,14 @@ public final class FoodTagMainActivity extends Activity implements
 	public void onClick(View v) {
 		if (v instanceof TagButton) {
 			TagButton b = (TagButton) v;
-			productService.addRemoveTag(product, b.getProductTag());
+			if (b == btnHalal) {
+				product.setHalal(b.isChecked());
+			} else if (b == btnKosher) {
+				product.setKosher(b.isChecked());
+			} else if (b == btnVegetarian) {
+				product.setVegetarian(b.isChecked());
+			}
+			productService.save(product);
 		}
 	}
 
@@ -515,6 +512,11 @@ public final class FoodTagMainActivity extends Activity implements
 	public void showInputText(final int titleCode, final TextView textView) {
 		final EditText editProductText = new EditText(this);
 		editProductText.setInputType(InputType.TYPE_CLASS_TEXT);
+		if (titleCode == R.string.title_enter_name) {
+			editProductText.setText(product.getName());
+		} else if (titleCode == R.string.title_enter_description) {
+			editProductText.setText(product.getDescription());
+		}
 		AlertDialog inputTextDialog = new AlertDialog.Builder(this)
 				.setTitle(getString(titleCode))
 				.setMessage("")
@@ -528,8 +530,8 @@ public final class FoodTagMainActivity extends Activity implements
 								textView.setText(text);
 								if (titleCode == R.string.title_enter_name) {
 									product.setName(text);
-								} else if (titleCode == R.string.title_enter_ingredients) {
-									product.setIngredients(text);
+								} else if (titleCode == R.string.title_enter_description) {
+									product.setDescription(text);
 								}
 								productService.save(product);
 							}
@@ -551,22 +553,9 @@ public final class FoodTagMainActivity extends Activity implements
 	public void productFound(Product result) {
 		this.product = result;
 		handleDecodeInternally(product.getBarcode(), null, false);
-		for (TagEnum tag : product.getTags()) {
-			// TODO à implémenter
-			switch (tag) {
-			case HALAL:
-				btnHalal.setChecked(true);
-				break;
-			case KOSHER:
-				btnKosher.setChecked(true);
-				break;
-			case VEGETARIAN:
-				btnVegetarian.setChecked(true);
-				break;
-			default:
-				break;
-			}
-		}
+		btnHalal.setChecked(product.isHalal());
+		btnKosher.setChecked(product.isKosher());
+		btnVegetarian.setChecked(product.isVegetarian());
 	}
 
 	private void takePhoto() {
@@ -599,8 +588,8 @@ public final class FoodTagMainActivity extends Activity implements
 		} else if (view == textName) {
 			showInputText(R.string.title_enter_name, textName);
 
-		} else if (view == textIngredients) {
-			showInputText(R.string.title_enter_ingredients, textIngredients);
+		} else if (view == textDescription) {
+			showInputText(R.string.title_enter_description, textDescription);
 
 		} else if (view == barcodeImageView) {
 			takePhoto();

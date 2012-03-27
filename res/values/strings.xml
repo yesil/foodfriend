@@ -59,13 +59,13 @@
     <string name="result_product">Found product</string>
     <string name="title_about">Barcode Scanner v</string>
     <string name="tags">Tags</string>
-    <string name="ingredients">Ingredients</string>
+    <string name="description">Description</string>
     <string name="product_name">Name</string>
     <string name="available_tags">Available tags</string>
     <string name="added_tags">Added tags</string>
     <string name="title_enter_name">Enter product name</string>
-    <string name="title_enter_ingredients">Enter product ingredients</string>
-<!--     <string name="ws_url">http://192.168.1.3:3000</string> -->
-    <string name="ws_url">http://foodtag.herokuapp.com</string>
+    <string name="title_enter_description">Enter product description</string>
+    <string name="ws_url">http://192.168.1.3:3000</string>
+<!--     <string name="ws_url">http://foodtag.ch</string> -->
 
 </resources>

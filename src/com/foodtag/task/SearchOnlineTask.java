@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -14,7 +12,6 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -22,7 +19,6 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.foodtag.Product;
-import com.foodtag.TagEnum;
 import com.foodtag.service.ProductService;
 
 public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
@@ -56,19 +52,13 @@ public class SearchOnlineTask extends AsyncTask<String, Integer, Product> {
 					}
 
 					JSONObject productJson = new JSONObject(builder.toString());
-					Set<TagEnum> tagSet = new HashSet<TagEnum>();
-					JSONArray jsonArray = productJson.getJSONArray("tags");
 					boolean locked = productJson.getBoolean("locked");
-					if (jsonArray != null) {
-						for (int i = 0; i < jsonArray.length(); i++) {
-							tagSet.add(TagEnum.valueOf(jsonArray.get(i)
-									.toString()));
-						}
-					}
 					product = new Product(productJson.getString("barcode"),
 							productJson.getString("name"),
-							productJson.getString("ingredients"), tagSet,
-							locked);
+							productJson.getString("desc"), locked);
+					product.setHalal(productJson.getBoolean("halal"));
+					product.setKosher(productJson.getBoolean("kosher"));
+					product.setVegetarian(productJson.getBoolean("vegetarian"));
 				} else {
 					Log.e(getClass().toString(), "Failed to download file");
 				}

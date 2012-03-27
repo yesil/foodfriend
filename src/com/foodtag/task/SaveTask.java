@@ -3,7 +3,6 @@ package com.foodtag.task;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -58,12 +57,16 @@ public class SaveTask extends AsyncTask<Void, Integer, Boolean> {
 			}
 			mpEntity.addPart("barcode", new StringBody(product.getBarcode()));
 			mpEntity.addPart("name", new StringBody(product.getName()));
-			mpEntity.addPart("ingredients",
-					new StringBody(product.getIngredients()));
+			mpEntity.addPart("desc",
+					new StringBody(product.getDescription()));
 			mpEntity.addPart("region",
 					new StringBody(System.getProperty("user.region")));
-			mpEntity.addPart("tags",
-					new StringBody(StringUtils.join(product.getTags(), ",")));
+			mpEntity.addPart("halal",
+					new StringBody(String.valueOf(product.isHalal())));
+			mpEntity.addPart("kosher",
+					new StringBody(String.valueOf(product.isKosher())));
+			mpEntity.addPart("vegetarian",
+					new StringBody(String.valueOf(product.isVegetarian())));
 			post.setEntity(mpEntity);
 			httpclient.execute(post);
 			if (file != null) {

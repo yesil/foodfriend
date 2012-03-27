@@ -7,7 +7,6 @@ import android.widget.ImageView;
 
 import com.foodtag.FoodTagMainActivity;
 import com.foodtag.Product;
-import com.foodtag.TagEnum;
 import com.foodtag.task.LoadImageTask;
 import com.foodtag.task.SaveTask;
 import com.foodtag.task.SearchOnlineTask;
@@ -29,18 +28,6 @@ public class ProductService implements Serializable {
 	public ProductService(FoodTagMainActivity captureActivity, String wsURL) {
 		this.captureActivity = captureActivity;
 		this.wsURL = wsURL;
-	}
-
-	public boolean addRemoveTag(Product product, TagEnum tag) {
-		boolean added = true;
-		if (product.getTags().contains(tag)) {
-			product.getTags().remove(tag);
-			added = false;
-		} else {
-			product.getTags().add(tag);
-		}
-		save(product);
-		return added;
 	}
 
 	public String getWsURL() {
@@ -89,6 +76,10 @@ public class ProductService implements Serializable {
 
 	private void showHideProgress() {
 		captureActivity.showHideProgress(searching || loadingImage || saving);
+	}
+
+	public boolean isLoadingImage() {
+		return loadingImage;
 	}
 
 }

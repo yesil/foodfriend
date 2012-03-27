@@ -30,12 +30,6 @@
             android:orientation="vertical"
             android:padding="12sp" >
 
-            <ProgressBar
-                android:id="@+id/progress_bar_loading"
-                style="?android:attr/progressBarStyleLarge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
             <ImageView
                 android:id="@+id/barcode_image_view"
                 android:layout_width="wrap_content"
@@ -46,6 +40,7 @@
         </LinearLayout>
 
         <LinearLayout
+                android:id="@+id/cnt_body"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:orientation="vertical"
@@ -60,10 +55,10 @@
                 android:textColor="@color/tag_title" />
 
             <TextView
-                android:id="@+id/label_ingredients"
+                android:id="@+id/label_description"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/ingredients"
+                android:text="@string/description"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
@@ -81,21 +76,29 @@
                     android:id="@+id/btn_halal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="" />
+                    android:textOff="@string/lbl_halal"
+                    android:textOn="@string/lbl_halal"/>
 
                 <com.foodtag.TagButton
                     android:id="@+id/btn_kosher"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="" />
+                    android:textOff="@string/lbl_kosher"
+                    android:textOn="@string/lbl_kosher" />
 
                 <com.foodtag.TagButton
                     android:id="@+id/btn_vegetarian"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="" />
+                    android:textOff="@string/lbl_vegetagrian"
+                    android:textOn="@string/lbl_vegetagrian" />
             </LinearLayout>
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progress_bar_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
     </LinearLayout>
 
 </merge>

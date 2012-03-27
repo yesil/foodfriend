@@ -1,63 +1,73 @@
 package com.foodtag;
 
-import java.util.Set;
-
 public class Product {
 
 	private final String barcode;
 
-	private String ingredients;
+	private String description;
 
-	private String name;
+	private boolean halal;
+
+	private boolean kosher;
 
 	private final boolean locked;
+	private String name;
+	private boolean vegetarian;
 
-	public boolean isLocked() {
-		return locked;
-	}
-
-	private final Set<TagEnum> tags;
-
-	public Product(String barcode, String name, String ingredients,
-			Set<TagEnum> tags, boolean locked) {
+	public Product(String barcode, String name, String description,
+			boolean locked) {
 		super();
 		this.barcode = barcode;
 		this.name = name;
-		this.ingredients = ingredients;
-		this.tags = tags;
+		this.description = description;
 		this.locked = locked;
-	}
-
-	public void addTag(TagEnum productTag) {
-		tags.add(productTag);
-
 	}
 
 	public String getBarcode() {
 		return barcode;
 	}
 
-	public String getIngredients() {
-		return ingredients;
+	public String getDescription() {
+		return description;
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public Set<TagEnum> getTags() {
-		return tags;
+	public boolean isHalal() {
+		return halal;
 	}
 
-	public void removeTag(String productTag) {
-		tags.remove(productTag);
+	public boolean isKosher() {
+		return kosher;
 	}
 
-	public void setIngredients(String ingredients) {
-		this.ingredients = ingredients;
+	public boolean isLocked() {
+		return locked;
+	}
+
+	public boolean isVegetarian() {
+		return vegetarian;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public void setHalal(boolean halal) {
+		this.halal = halal;
+	}
+
+	public void setKosher(boolean kosher) {
+		this.kosher = kosher;
 	}
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public void setVegetarian(boolean vegetarian) {
+		this.vegetarian = vegetarian;
 	}
 }
