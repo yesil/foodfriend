@@ -338,7 +338,6 @@ public final class FoodTagMainActivity extends Activity implements
 				}
 				resetStatusView();
 			} else {
-				product = new Product(rawResult.getText(), "", "", false);
 				handleDecodeInternally(rawResult.getText(), barcode, true);
 			}
 		}
@@ -454,6 +453,7 @@ public final class FoodTagMainActivity extends Activity implements
 		resultView.setVisibility(View.GONE);
 		viewfinderView.setVisibility(View.VISIBLE);
 		pbLoading.setVisibility(View.GONE);
+		product = null;
 
 		if (handler != null) {
 			handler.restartPreviewAndDecode();
@@ -471,14 +471,18 @@ public final class FoodTagMainActivity extends Activity implements
 	public void onClick(View v) {
 		if (v instanceof TagButton) {
 			TagButton b = (TagButton) v;
-			if (b == btnHalal) {
-				product.setHalal(b.isChecked());
-			} else if (b == btnKosher) {
-				product.setKosher(b.isChecked());
-			} else if (b == btnVegetarian) {
-				product.setVegetarian(b.isChecked());
+			if (product != null) {
+				if (b == btnHalal) {
+					product.setHalal(b.isChecked());
+				} else if (b == btnKosher) {
+					product.setKosher(b.isChecked());
+				} else if (b == btnVegetarian) {
+					product.setVegetarian(b.isChecked());
+				}
+				productService.save(product);
+			} else {
+				b.setChecked(!b.isChecked());
 			}
-			productService.save(product);
 		}
 	}
 
@@ -510,39 +514,41 @@ public final class FoodTagMainActivity extends Activity implements
 	}
 
 	public void showInputText(final int titleCode, final TextView textView) {
-		final EditText editProductText = new EditText(this);
-		editProductText.setInputType(InputType.TYPE_CLASS_TEXT);
-		if (titleCode == R.string.title_enter_name) {
-			editProductText.setText(product.getName());
-		} else if (titleCode == R.string.title_enter_description) {
-			editProductText.setText(product.getDescription());
-		}
-		AlertDialog inputTextDialog = new AlertDialog.Builder(this)
-				.setTitle(getString(titleCode))
-				.setMessage("")
-				.setView(editProductText)
-				.setPositiveButton(R.string.button_ok,
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog,
-									int whichButton) {
-								String text = editProductText.getText()
-										.toString();
-								textView.setText(text);
-								if (titleCode == R.string.title_enter_name) {
-									product.setName(text);
-								} else if (titleCode == R.string.title_enter_description) {
-									product.setDescription(text);
+		if (product != null) {
+			final EditText editProductText = new EditText(this);
+			editProductText.setInputType(InputType.TYPE_CLASS_TEXT);
+			if (titleCode == R.string.title_enter_name) {
+				editProductText.setText(product.getName());
+			} else if (titleCode == R.string.title_enter_description) {
+				editProductText.setText(product.getDescription());
+			}
+			AlertDialog inputTextDialog = new AlertDialog.Builder(this)
+					.setTitle(getString(titleCode))
+					.setMessage("")
+					.setView(editProductText)
+					.setPositiveButton(R.string.button_ok,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int whichButton) {
+									String text = editProductText.getText()
+											.toString();
+									textView.setText(text);
+									if (titleCode == R.string.title_enter_name) {
+										product.setName(text);
+									} else if (titleCode == R.string.title_enter_description) {
+										product.setDescription(text);
+									}
+									productService.save(product);
 								}
-								productService.save(product);
-							}
-						})
-				.setNegativeButton(R.string.button_cancel,
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog,
-									int whichButton) {
-							}
-						}).show();
-		inputTextDialog.show();
+							})
+					.setNegativeButton(R.string.button_cancel,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int whichButton) {
+								}
+							}).show();
+			inputTextDialog.show();
+		}
 	}
 
 	public void showHideProgress(boolean visible) {
@@ -585,14 +591,16 @@ public final class FoodTagMainActivity extends Activity implements
 	public boolean onLongClick(View view) {
 		if (view == viewfinderView) {
 			showKeyboard();
-		} else if (view == textName) {
-			showInputText(R.string.title_enter_name, textName);
+		} else if (product != null) {
+			if (view == textName) {
+				showInputText(R.string.title_enter_name, textName);
 
-		} else if (view == textDescription) {
-			showInputText(R.string.title_enter_description, textDescription);
+			} else if (view == textDescription) {
+				showInputText(R.string.title_enter_description, textDescription);
 
-		} else if (view == barcodeImageView) {
-			takePhoto();
+			} else if (view == barcodeImageView) {
+				takePhoto();
+			}
 		}
 		return true;
 	}
